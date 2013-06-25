@@ -11,16 +11,19 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.Toast;
@@ -223,6 +226,8 @@ public class ShowActivity extends Activity {
 		String path=getIntent().getStringExtra("path");
 		LoadAsyncTask task=new LoadAsyncTask();
 		task.execute(path);
+		
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		
 		WebView web=(WebView) findViewById(R.id.webviewinshow);
 		web.getSettings().setBuiltInZoomControls(true);

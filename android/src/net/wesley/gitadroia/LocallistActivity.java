@@ -8,7 +8,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.util.Log;
 import android.view.Menu;
@@ -16,7 +19,9 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
@@ -31,9 +36,13 @@ public class LocallistActivity extends Activity {
 		((Button)this.findViewById(R.id.btnsearch)).setOnClickListener(new OnClickListener(){
 			@Override
 			public void onClick(View arg0) {
+				EditText searchText=(EditText) findViewById(R.id.textinlocallist);
+				searchText.setFocusable(true);
+				searchText.setFocusableInTouchMode(true);
+				
+
 				Intent i=new Intent(LocallistActivity.this,SearchActivity.class);
-				//Intent i=new Intent(LocallistActivity.this,ShowActivity.class);
-				//i.putExtra("path", "/sdcard/preview.jita");
+				i.putExtra("search", searchText.getText().toString());
 				startActivity(i);
 			}
 		});
@@ -49,6 +58,31 @@ public class LocallistActivity extends Activity {
 				startActivity(i);
 			}
 		});
+		
+		lv.setOnItemLongClickListener(new OnItemLongClickListener(){
+			@Override
+			public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
+					int arg2, long arg3) {
+				final int pos=arg2;
+				new AlertDialog.Builder(LocallistActivity.this).setTitle("提示")
+					.setMessage("您确定要删除本地曲谱 "+locallist.get(arg2).get("song")+" 吗？")
+					.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							new File(locallist.get(pos).get("path")).delete();
+							locallist.remove(pos);
+							ListView lv=(ListView) findViewById(R.id.listinlocallist);
+							lv.setAdapter(new SimpleAdapter(LocallistActivity.this,
+									locallist, R.layout.songrow,
+									new String[] { "song", "singer"}, new int[] {
+											R.id.listrow_name, R.id.listrow_artist}));
+						}
+					})
+					.setNegativeButton("取消", null).create().show();
+				return false;
+			}
+		});
+		
 	}
 	
 	@Override

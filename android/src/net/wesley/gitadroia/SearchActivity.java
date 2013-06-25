@@ -261,31 +261,18 @@ public class SearchActivity extends Activity {
 			}
 		});		
 		
-		((Button)findViewById(R.id.searchinsearch)).setOnClickListener(new OnClickListener(){
-			@Override
-			public void onClick(View v) {
-				TextView text=(TextView) findViewById(R.id.textinsearch);
-
-				TextView song=(TextView) findViewById(R.id.songinsearch);
-				if (song.getText().toString().length()==0){
-					song.setText(text.getText().toString());
-				};
-				
-				RemoteSearchAsyncTask task=new RemoteSearchAsyncTask();
-				task.execute(text.getText().toString());
-				
-				String url="http://www.baidu.com/s?wd=吉他谱+"+text.getText().toString();
-				WebView web=(WebView) findViewById(R.id.webview);
-				clearCacheFolder(getApplicationContext().getCacheDir());
-				web.clearCache(true);
-				web.loadUrl(url);
-
-				InputMethodManager imm = (InputMethodManager)getSystemService(
-						Context.INPUT_METHOD_SERVICE);
-				imm.hideSoftInputFromWindow(text.getWindowToken(), 0);
-
-			}
-		});
+		
+		String search=this.getIntent().getStringExtra("search");
+		TextView song=(TextView) findViewById(R.id.songinsearch);
+		if (song.getText().toString().length()==0){
+			song.setText(search);
+		};
+		RemoteSearchAsyncTask task=new RemoteSearchAsyncTask();
+		task.execute(search);
+		String url="http://www.baidu.com/s?wd=吉他谱+"+search;
+		clearCacheFolder(getApplicationContext().getCacheDir());
+		web.clearCache(true);
+		web.loadUrl(url);
 
 		((Button)findViewById(R.id.previewinsearch)).setEnabled(false);
 		((Button)findViewById(R.id.previewinsearch)).setOnClickListener(new OnClickListener(){
