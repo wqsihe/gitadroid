@@ -14,6 +14,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -32,6 +33,69 @@ public class ShowActivity extends Activity {
 		public TimePosition(long deltatime, float deltay) {
 			this.deltatime=deltatime;
 			this.deltay=deltay;
+		}
+		
+	}
+	
+	class LoadAsyncTask extends AsyncTask<String,Void,String>{
+		@Override
+		protected String doInBackground(String... arg0) {
+			String path=arg0[0];
+			File recf=new File(path+".rec");
+			if (recf.exists()){
+				poses.clear();
+				try {
+					DataInputStream in = new DataInputStream(new FileInputStream(recf));
+					while (in.available()>0){
+						poses.add(new TimePosition(in.readLong(),in.readFloat()));
+					}
+				}
+				catch (Exception e){
+					Log.e("", "exception",e);
+				}
+
+			}
+			
+			File file=new File(path);
+			try {
+				DataInputStream in = new DataInputStream(new FileInputStream(file));
+				String song=in.readUTF();
+				String singer=in.readUTF();
+				int idx=0;
+				String cnt="";
+				while (in.available()>0){
+					int len=in.readInt();
+					byte[] bs=new byte[len];
+					in.read(bs);
+					Bitmap bmp=BitmapFactory.decodeByteArray(bs, 0, len);
+					try {
+						File tmp=new File(getApplicationContext().getCacheDir(),"img"+idx+".png");
+						cnt+="<tr><td><img width='100%' src='file://"+tmp.getAbsolutePath()+"'></td></tr>";
+						idx++;
+						FileOutputStream out = new FileOutputStream(tmp);
+						bmp.compress(Bitmap.CompressFormat.PNG, 90, out);
+					} catch (Exception e) {
+						Log.e("", "",e);
+					}			
+				}
+				return cnt;
+			}
+			catch (Exception e){
+				Log.e("", "exception",e);
+			}
+
+			
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(String result) {
+			super.onPostExecute(result);
+			if (poses.size()>0)		((Button)findViewById(R.id.btnplayinplay)).setEnabled(true);
+			WebView web=(WebView) findViewById(R.id.webviewinshow);
+			String body="<html><table width='100%' border='0'>"+result+"</table></html>";
+			web.clearCache(true);
+			web.loadDataWithBaseURL(null,body, "text/html", "utf-8",null);
 		}
 		
 	}
@@ -156,6 +220,10 @@ public class ShowActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.showlayout);
 		
+		String path=getIntent().getStringExtra("path");
+		LoadAsyncTask task=new LoadAsyncTask();
+		task.execute(path);
+		
 		WebView web=(WebView) findViewById(R.id.webviewinshow);
 		web.getSettings().setBuiltInZoomControls(true);
 		web.getSettings().setSupportZoom(true);
@@ -209,64 +277,13 @@ public class ShowActivity extends Activity {
 			}
 		});
 		
-		String path=getIntent().getStringExtra("path");
 		String cachepath=getApplicationContext().getCacheDir().getAbsolutePath();
 		
 		Log.e("", "we need show "+path);
-		
 		((Button)findViewById(R.id.btnplayinplay)).setEnabled(false);
 		if (path.startsWith(cachepath)){
 			((Button)findViewById(R.id.btnrecordinplay)).setEnabled(false);
-		}
-		else{
-			File recf=new File(path+".rec");
-			if (recf.exists()){
-				poses.clear();
-				((Button)findViewById(R.id.btnplayinplay)).setEnabled(true);
-				try {
-					DataInputStream in = new DataInputStream(new FileInputStream(recf));
-					while (in.available()>0){
-						poses.add(new TimePosition(in.readLong(),in.readFloat()));
-					}
-				}
-				catch (Exception e){
-					Log.e("", "exception",e);
-				}
-
-			}
-			
-		}
-		File file=new File(path);
-		try {
-			DataInputStream in = new DataInputStream(new FileInputStream(file));
-			String song=in.readUTF();
-			String singer=in.readUTF();
-			int idx=0;
-			String cnt="";
-			while (in.available()>0){
-				int len=in.readInt();
-				byte[] bs=new byte[len];
-				in.read(bs);
-				Bitmap bmp=BitmapFactory.decodeByteArray(bs, 0, len);
-				try {
-					File tmp=new File(getApplicationContext().getCacheDir(),"img"+idx+".png");
-					cnt+="<tr><td><img width='100%' src='file://"+tmp.getAbsolutePath()+"'></td></tr>";
-					idx++;
-					FileOutputStream out = new FileOutputStream(tmp);
-					bmp.compress(Bitmap.CompressFormat.PNG, 90, out);
-				} catch (Exception e) {
-					Log.e("", "",e);
-				}			
-			}
-			String body="<html><table width='100%' border='0'>"+cnt+"</table></html>";
-			Log.e("", body);
-			web.clearCache(true);
-			web.loadDataWithBaseURL(null,body, "text/html", "utf-8",null);
-		}
-		catch (Exception e){
-			Log.e("", "exception",e);
-		}
-				
+		}				
 	}
 
 	protected void saveRecordToFile() {

@@ -210,6 +210,14 @@ public class SearchActivity extends Activity {
 		}		
 	}
 	
+	
+	@Override
+	protected void onResume(){
+		super.onResume();
+		File file=new File(getApplicationContext().getCacheDir(),"preview.jita");
+		((Button)findViewById(R.id.createinsearch)).setEnabled(file.exists());
+	}
+	
 	@SuppressLint("SetJavaScriptEnabled")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -241,6 +249,7 @@ public class SearchActivity extends Activity {
 		web.setWebViewClient(new WebViewClient());
 		
 		
+		((Button)findViewById(R.id.createinsearch)).setEnabled(false);
 		((Button)findViewById(R.id.createinsearch)).setOnClickListener(new OnClickListener(){
 			@Override
 			public void onClick(View arg0) {
@@ -278,6 +287,7 @@ public class SearchActivity extends Activity {
 			}
 		});
 
+		((Button)findViewById(R.id.previewinsearch)).setEnabled(false);
 		((Button)findViewById(R.id.previewinsearch)).setOnClickListener(new OnClickListener(){
 			@Override
 			public void onClick(View v) {
@@ -510,9 +520,20 @@ public class SearchActivity extends Activity {
 			@Override
 			public void onClick(DialogInterface arg0, int arg1) {
 				//updateConfirmView();
+				if (confirmList.size()>0){
+					((Button)findViewById(R.id.previewinsearch)).setEnabled(true);
+				}
+				else{
+					((Button)findViewById(R.id.previewinsearch)).setEnabled(false);
+				}
 			}
 		})
-		.setNegativeButton("取消", null)
+		.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface arg0, int arg1) {
+				confirmList.clear();
+			}
+		})
 		.setView(hsv)
 		.create();
 		
