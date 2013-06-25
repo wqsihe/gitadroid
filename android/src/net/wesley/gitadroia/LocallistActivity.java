@@ -10,6 +10,7 @@ import java.util.HashMap;
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Intent;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -43,6 +44,7 @@ public class LocallistActivity extends Activity {
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 					long arg3) {
 				Intent i=new Intent(LocallistActivity.this,ShowActivity.class);
+				Log.e("", "arg2:"+arg2);
 				i.putExtra("path", locallist.get(arg2).get("path"));
 				startActivity(i);
 			}

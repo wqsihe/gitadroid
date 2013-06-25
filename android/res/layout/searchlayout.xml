@@ -108,33 +108,19 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
 
-        <HorizontalScrollView
-            android:id="@+id/galleryinsearcg"
-            android:layout_width="wrap_content"
-            android:layout_height="70dip"
-            android:layout_weight="1" >
-
-            <LinearLayout
-                android:id="@+id/gallerylayoutinsearch"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal" >
-
-            </LinearLayout>
-        </HorizontalScrollView>
-
         <Button
             android:id="@+id/cacheinsearch"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="0"
-            android:text="挖宝藏" />
+            android:text="搜图" />
 
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        <Button
+            android:id="@+id/createinsearch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="创建" />
 
         <Button
             android:id="@+id/previewinsearch"
@@ -142,13 +128,6 @@
             android:layout_height="wrap_content"
             android:layout_weight="0"
             android:text="预览" />
-
-        <Button
-            android:id="@+id/createinsearch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="0"
-            android:text="创建" />
 
     </LinearLayout>
 

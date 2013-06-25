@@ -128,7 +128,6 @@ public class SearchActivity extends Activity {
 			else{ 
 				progressDialog.setIndeterminate(true);
 			}
-			Log.e("", ""+progress[0]);
 		}
 		
 		@Override 
@@ -510,7 +509,7 @@ public class SearchActivity extends Activity {
 		.setPositiveButton("确定", new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface arg0, int arg1) {
-				updateConfirmView();
+				//updateConfirmView();
 			}
 		})
 		.setNegativeButton("取消", null)
@@ -529,7 +528,7 @@ public class SearchActivity extends Activity {
 					confirmList.add((String) arg0.getTag());
 					if (l.getChildCount()==0){
 						dialog.dismiss();
-						updateConfirmView();
+						//updateConfirmView();
 					}
 				}
 			});
@@ -541,6 +540,7 @@ public class SearchActivity extends Activity {
 			
 	}
 
+	/*
 	protected void updateConfirmView() {
 		LinearLayout l=(LinearLayout) findViewById(R.id.gallerylayoutinsearch);
 		l.removeAllViews();
@@ -562,7 +562,7 @@ public class SearchActivity extends Activity {
 			iv.setImageBitmap(BitmapFactory.decodeFile(path));
 			l.addView(iv);
 		}
-	}
+	}*/
 
 	private void listdir(File base) {
 		Log.e("", "list dir:"+base.getAbsolutePath());

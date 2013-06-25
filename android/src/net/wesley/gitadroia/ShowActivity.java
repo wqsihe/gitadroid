@@ -211,6 +211,9 @@ public class ShowActivity extends Activity {
 		
 		String path=getIntent().getStringExtra("path");
 		String cachepath=getApplicationContext().getCacheDir().getAbsolutePath();
+		
+		Log.e("", "we need show "+path);
+		
 		((Button)findViewById(R.id.btnplayinplay)).setEnabled(false);
 		if (path.startsWith(cachepath)){
 			((Button)findViewById(R.id.btnrecordinplay)).setEnabled(false);
@@ -257,6 +260,7 @@ public class ShowActivity extends Activity {
 			}
 			String body="<html><table width='100%' border='0'>"+cnt+"</table></html>";
 			Log.e("", body);
+			web.clearCache(true);
 			web.loadDataWithBaseURL(null,body, "text/html", "utf-8",null);
 		}
 		catch (Exception e){
