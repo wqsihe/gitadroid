@@ -21,6 +21,7 @@ import android.os.Handler;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
@@ -219,15 +220,21 @@ public class ShowActivity extends Activity {
 
 	protected int startPlayLeft;
 
+	private View main;
+
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.showlayout);
+		getLayoutInflater();
+		main = LayoutInflater.from(this).inflate(R.layout.showlayout, null);  
+        main.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE); 
+		setContentView(main);
 		
 		String path=getIntent().getStringExtra("path");
 		LoadAsyncTask task=new LoadAsyncTask();
 		task.execute(path);
 		
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		//getWindow().getDecorView().setSystemUiVisibility(View.GONE);
 		
 		WebView web=(WebView) findViewById(R.id.webviewinshow);
 		web.getSettings().setBuiltInZoomControls(true);
