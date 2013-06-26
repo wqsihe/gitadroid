@@ -7,18 +7,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -26,6 +22,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -63,8 +60,8 @@ public class ShowActivity extends Activity {
 			File file=new File(path);
 			try {
 				DataInputStream in = new DataInputStream(new FileInputStream(file));
-				String song=in.readUTF();
-				String singer=in.readUTF();
+				in.readUTF();
+				in.readUTF();
 				int idx=0;
 				String cnt="";
 				while (in.available()>0){
@@ -221,7 +218,7 @@ public class ShowActivity extends Activity {
 	protected int startPlayLeft;
 
 	private View main;
-
+	
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		getLayoutInflater();
@@ -240,11 +237,17 @@ public class ShowActivity extends Activity {
 		web.getSettings().setBuiltInZoomControls(true);
 		web.getSettings().setSupportZoom(true);
 		web.getSettings().setDisplayZoomControls(false);
+		web.setWebViewClient(new WebViewClient(){
+			@Override
+			public void onPageFinished (WebView view, String url){
+				super.onPageFinished(view, url);
+				findViewById(R.id.progressinshow).setVisibility(View.INVISIBLE);
+			}
+		});
 
 		((Button)findViewById(R.id.btnplayinplay)).setOnClickListener(new OnClickListener(){
 			@Override
 			public void onClick(View arg0) {
-				Button btn=(Button)arg0;
 				playing=!playing;
 				if (playing){
 					if (poses.size()<=0){

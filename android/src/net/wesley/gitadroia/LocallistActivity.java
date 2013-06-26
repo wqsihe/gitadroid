@@ -3,12 +3,11 @@ package net.wesley.gitadroia;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -26,6 +25,45 @@ import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
 public class LocallistActivity extends Activity {
+	
+	class RefreshLocalTask extends AsyncTask<Void,Void,Void>{
+		@Override
+		protected Void doInBackground(Void... arg0) {
+			locallist.clear();
+			File f=getApplicationContext().getFilesDir();
+			File[] files = f.listFiles();
+			for (File fi:files){
+				if (fi.getAbsolutePath().endsWith(".gita")){
+					DataInputStream in;
+					try {
+						in = new DataInputStream(new FileInputStream(fi));
+						String song=in.readUTF();
+						String singer=in.readUTF();
+						HashMap<String,String>map=new HashMap<String,String>();
+						map.put("song", song);
+						map.put("path", fi.getAbsolutePath());
+						map.put("singer", singer);
+						locallist.add(map);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+			super.onPostExecute(result);
+			ListView lv=(ListView) findViewById(R.id.listinlocallist);
+			lv.setAdapter(new SimpleAdapter(LocallistActivity.this,
+					locallist, R.layout.songrow,
+					new String[] { "song", "singer"}, new int[] {
+							R.id.listrow_name, R.id.listrow_artist}));	
+			findViewById(R.id.progressinlocallist).setVisibility(View.INVISIBLE);
+		}
+		
+	}
 	
 	private ArrayList<HashMap<String,String>> locallist=new ArrayList<HashMap<String,String>>();
 
@@ -88,42 +126,21 @@ public class LocallistActivity extends Activity {
 	@Override
 	protected void onResume(){
 		super.onResume();
+		findViewById(R.id.textinlocallist).clearFocus();
+		findViewById(R.id.linearLayout_focus).requestFocus();
 		refreshLocalList();
 	}
 
 	private void refreshLocalList() {
-		locallist.clear();
-		File f=getApplicationContext().getFilesDir();
-		File[] files = f.listFiles();
-		for (File fi:files){
-			if (fi.getAbsolutePath().endsWith(".gita")){
-				DataInputStream in;
-				try {
-					in = new DataInputStream(new FileInputStream(fi));
-					String song=in.readUTF();
-					String singer=in.readUTF();
-					HashMap<String,String>map=new HashMap<String,String>();
-					map.put("song", song);
-					map.put("path", fi.getAbsolutePath());
-					map.put("singer", singer);
-					locallist.add(map);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		ListView lv=(ListView) findViewById(R.id.listinlocallist);
-		lv.setAdapter(new SimpleAdapter(this,
-				locallist, R.layout.songrow,
-				new String[] { "song", "singer"}, new int[] {
-						R.id.listrow_name, R.id.listrow_artist}));
-
+		findViewById(R.id.progressinlocallist).setVisibility(View.VISIBLE);
+		RefreshLocalTask task=new RefreshLocalTask();
+		task.execute();
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.locallist, menu);
+		//getMenuInflater().inflate(R.menu.locallist, menu);
 		return true;
 	}
 
