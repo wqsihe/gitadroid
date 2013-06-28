@@ -8,6 +8,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,11 +69,34 @@ public class SearchActivity extends Activity {
 	
 	ArrayList<String> maybeList =new ArrayList<String>();
 	ArrayList<String> confirmList =new ArrayList<String>();
+	ArrayList<String> unusedFileList =new ArrayList<String>();
+	
 	
 	ArrayList<HashMap<String,String>> remoteList =new ArrayList<HashMap<String,String>>();
 	
 	ProgressDialog progressDialog;
 	
+	class SearchCacheTask extends AsyncTask<Void,Void,Void>{
+		@Override
+		protected Void doInBackground(Void... arg0) {
+			File base=getApplicationContext().getCacheDir();
+			search_data1(new File(base,"webviewCacheChromium"));
+			listdir(base);
+			return null;			
+		}
+		
+		@Override 
+		protected void onPostExecute(Void result){
+			findViewById(R.id.progressinsearch).setVisibility(View.INVISIBLE);
+			if (maybeList.size()<0){
+				Toast.makeText(SearchActivity.this, "没有找到任何可能谱子图片！", Toast.LENGTH_LONG).show();
+			}
+			else{
+				showChooseDialog();
+			}
+		}
+		
+	}
 	
 	class DownloadAsync extends  AsyncTask<String,Integer,String>{
 		@Override
@@ -214,6 +239,8 @@ public class SearchActivity extends Activity {
 	@Override
 	protected void onResume(){
 		super.onResume();
+		findViewById(R.id.songinsearch).clearFocus();
+		findViewById(R.id.focuslayoutinsearch).requestFocus();
 		File file=new File(getApplicationContext().getCacheDir(),"preview.jita");
 		((Button)findViewById(R.id.createinsearch)).setEnabled(file.exists());
 	}
@@ -246,16 +273,28 @@ public class SearchActivity extends Activity {
 
 		WebView web=(WebView) findViewById(R.id.webview);
 		web.getSettings().setJavaScriptEnabled(true);  
-		web.setWebViewClient(new WebViewClient());
+		web.setWebViewClient(new WebViewClient(){
+			@Override
+			public void onPageFinished(WebView view, String url) {
+				WebView web=(WebView) findViewById(R.id.webview);
+				if (!web.canGoBack()){
+					unusedFileList.clear();
+					listUnusedFile();
+				}
+				super.onPageFinished(view, url);
+			}
+		});
 		
 		
 		((Button)findViewById(R.id.createinsearch)).setEnabled(false);
 		((Button)findViewById(R.id.createinsearch)).setOnClickListener(new OnClickListener(){
 			@Override
 			public void onClick(View arg0) {
+				((Button)findViewById(R.id.createinsearch)).setEnabled(false);
 				TextView song=(TextView) findViewById(R.id.songinsearch);
 				TextView singer=(TextView) findViewById(R.id.singerinsearch);
 				File file=new File(getApplicationContext().getCacheDir(),"preview.jita");
+				findViewById(R.id.progressinsearch).setVisibility(View.VISIBLE);
 				MyPostTask task=new MyPostTask();
 				task.execute(file.getAbsolutePath(),song.getText().toString(),singer.getText().toString());
 			}
@@ -364,6 +403,23 @@ public class SearchActivity extends Activity {
 	}
 	
 	
+	protected void listUnusedFile() {
+		File base=this.getApplicationContext().getCacheDir();
+		listunusedfile(base);
+	}
+
+	private void listunusedfile(File base) {
+		File[] files = base.listFiles();
+		for (File f:files){
+			if (f.isDirectory()){
+				listdir(f);
+			}
+			else{
+				unusedFileList.add(f.getAbsolutePath());
+			}
+		}
+	}
+
 	public void updateRemoteListView() {
 		ListView lv=(ListView) findViewById(R.id.listinsearch);
 		lv.setAdapter(new SimpleAdapter(this,
@@ -377,7 +433,7 @@ public class SearchActivity extends Activity {
 		HttpClient httpclient = new DefaultHttpClient();
 
 		HttpContext localContext = new BasicHttpContext();
-		HttpGet httpPost = new HttpGet(urlServer);
+		HttpGet httpPost = new HttpGet(urlServer.replace(" ", "%20"));
 
 		HttpResponse response = httpclient.execute(httpPost, localContext);
 		
@@ -455,16 +511,92 @@ public class SearchActivity extends Activity {
 		savedInstanceState.putStringArrayList("confirmlist", confirmList);
 	}
 	
+	private void search_data1(File base) {
+		int myseed=0;
+		File f=new File(base,"data_1");
+		try {
+			int size[]=new int[4];
+			int address[]=new int[4];
+			RandomAccessFile in = new RandomAccessFile(f, "r");
+			in.seek(8*1024);
+			while (in.getFilePointer()<in.length()){
+				int hash=in.readInt();
+				if (hash!=0){
+					in.skipBytes(7*4);
+					int keylen=toC(in.readInt());
+					if ((keylen>0) && (keylen<=160)){
+						in.skipBytes(4);
+						for (int i=0;i<4;i++){
+							size[i]=toC(in.readInt());
+						}
+						for (int i=0;i<4;i++){
+							address[i]=toC(in.readInt());
+							//Log.e("", String.format("Data Address:%d %08X size:%d %08X", i,address[i],size[i],size[i]));
+						}
+						if ((address[0] & 0x80000000) != 0x80000000){
+							//Log.e("", "invalid data block,skip!");
+							in.skipBytes(184);
+							continue;
+						}
+						in.skipBytes(24);
+						byte[] bs=new byte[keylen];
+						in.read(bs);
+						String key=new String(bs,"utf-8");
+						//Log.e("", "we got key:"+key);
+						
+						key=key.toLowerCase();
+						if (key.endsWith(".jpg") || key.endsWith(".jpeg") || key.endsWith(".png") || key.endsWith(".gif")){
+							if ((address[1] & 0xF0000000) == 0xC0000000){//block file in 4K
+								File cachef=new File(base,"my_"+myseed+".bin");
+								myseed++;
+								File datafile=new File(base,"data_"+(((address[1]&0xFF0000)>>16) & 0xFF));
+								//Log.e("", String.format("read data of %d from %s to %s",size[1],datafile.getAbsolutePath(),cachef.getAbsolutePath()));
+								RandomAccessFile cachein = new RandomAccessFile(datafile, "r");
+								cachein.seek(8*1024+(4*1024)*(address[1]&0xFFFF));
+								byte buf[]=new byte[size[1]];
+								cachein.read(buf);
+								FileOutputStream fo=new FileOutputStream(cachef);
+								fo.write(buf);
+								fo.close();
+								cachein.close();
+							}
+						}
+						
+						
+						in.skipBytes(160-keylen);
+					}
+					else{
+						in.skipBytes(220);
+					}
+				}
+				else{
+					in.skipBytes(256-4);
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			Log.e("", "meet exception:", e);
+		} catch (IOException e) {
+			Log.e("", "meet exception:", e);
+		}
+	}
+
+	private int toC(int v) {
+		int h1=((v&0xFF000000)>>24) & 0xFF;
+		int h2=((v&0xFF0000)>>16) & 0xFF;
+		int h3=((v&0xFF00)>>8) & 0xFF;
+		int h4=v&0xFF;
+
+		return (h4<<24) | (h3 << 16) | (h2 << 8) | (h1);
+	}
+	
 	protected void listCacheFile() {
+		
 		maybeList.clear();
-		File base=this.getApplicationContext().getCacheDir();
-		listdir(base);
-		if (maybeList.size()<0){
-			Toast.makeText(this, "没有找到任何可能谱子图片！", Toast.LENGTH_LONG).show();
-		}
-		else{
-			showChooseDialog();
-		}
+		findViewById(R.id.progressinsearch).setVisibility(View.VISIBLE);
+		SearchCacheTask task=new SearchCacheTask();
+		task.execute();
+		
 	}
 	
 	static int clearCacheFolder(final File dir) {
@@ -525,6 +657,7 @@ public class SearchActivity extends Activity {
 		.create();
 		
 		for (String path:maybeList){
+			if (unusedFileList.contains(path)) continue;
 			ImageView iv=new ImageView(this);
 			iv.setImageBitmap(BitmapFactory.decodeFile(path));
 			iv.setTag(path);
@@ -536,7 +669,6 @@ public class SearchActivity extends Activity {
 					confirmList.add((String) arg0.getTag());
 					if (l.getChildCount()==0){
 						dialog.dismiss();
-						//updateConfirmView();
 					}
 				}
 			});
@@ -573,14 +705,12 @@ public class SearchActivity extends Activity {
 	}*/
 
 	private void listdir(File base) {
-		Log.e("", "list dir:"+base.getAbsolutePath());
 		File[] files = base.listFiles();
 		for (File f:files){
 			if (f.isDirectory()){
 				listdir(f);
 			}
 			else{
-				Log.e("", "list file:"+f.getAbsolutePath());
 				try{
 					Bitmap bmp = BitmapFactory.decodeFile(f.getAbsolutePath());
 					if ((bmp.getWidth()>400) && (bmp.getHeight()>300)){
