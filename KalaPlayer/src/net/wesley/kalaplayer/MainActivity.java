@@ -285,7 +285,7 @@ public class MainActivity extends Activity {
 
 
 	private String getBase() {
-		String base="/mnt/external_sd/kala/";
+		String base="/mnt/sdcard2/kala/";
 		//String base="/sdcard/kala/";
 		if (!new File(base).exists()){
 			new File(base).mkdirs();
