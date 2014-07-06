@@ -368,11 +368,11 @@ public class MainActivity extends Activity {
 			    	Toast.makeText(this, result.getString("text"), Toast.LENGTH_LONG).show();
 			    }
 			    else{
-			    	String mv=result.getString("mv");
-			    	if (mv==null){
+			    	if (!result.has("mv")){
 			    		removeCurrDownload("没有MV视频，跳过播放！");
 			    		return;
 			    	}
+			    	String mv=result.getString("mv");
 			    	String song=result.getString("song");
 			    	String music=result.getString("music");
 			    	if (new File(getMusicLocalPath(music,prefix)).exists()){
@@ -799,16 +799,4 @@ public class MainActivity extends Activity {
 		return true;
 	}
 	
-	private static native int naMain(MainActivity pObject, String pVideoFileName, String dstPath);
-	
-    static {
-    	System.loadLibrary("avutil-52");
-        System.loadLibrary("avcodec-55");
-        System.loadLibrary("avformat-55");
-        System.loadLibrary("swresample-0");
-        System.loadLibrary("swscale-2");
-        System.loadLibrary("avfilter-3");
-    	System.loadLibrary("ffmpeg_call");
-    }
-
 }
