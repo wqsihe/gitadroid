@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -31,22 +30,22 @@ import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
+import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Context;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+//import android.widget.VideoView;
 import android.widget.VideoView;
 
 public class MainActivity extends Activity {
-	MediaPlayer mPlayer = new MediaPlayer();
+	MediaPlayer mPlayer;
 	public DatagramSocket mSocket;
 	private byte[] bytes=new byte[1024];
 	private DatagramPacket mPacket=new DatagramPacket(bytes, bytes.length);
@@ -65,12 +64,12 @@ public class MainActivity extends Activity {
 			try{
 				VideoView v=(VideoView) findViewById(R.id.idvideoview);
 				if (v.isPlaying()){
-					int vp = v.getCurrentPosition();
-					int ap = mPlayer.getCurrentPosition();
+					long vp = v.getCurrentPosition();
+					long ap = mPlayer.getCurrentPosition();
 					if (Math.abs(ap-vp)>100){
 						Toast.makeText(MainActivity.this, "同步音视频", Toast.LENGTH_LONG).show();
 						v.pause();
-						mPlayer.seekTo(v.getCurrentPosition());
+						mPlayer.seekTo((int) v.getCurrentPosition());
 						v.start();
 					}
 				}
@@ -82,6 +81,7 @@ public class MainActivity extends Activity {
 		}
 	};
 	public Object lastCmd="";
+	private HashMap<String, String> currDownloadMap;
 
 	static class GetSongMVHandler extends Handler {
 	    private final WeakReference<MainActivity> mActivity;
@@ -284,13 +284,15 @@ public class MainActivity extends Activity {
 
 
 
+	@SuppressLint("SdCardPath")
 	private String getBase() {
 		String base="/mnt/sdcard2/kala/";
-		//String base="/sdcard/kala/";
-		if (!new File(base).exists()){
-			new File(base).mkdirs();
+		if (new File(base).exists()){
+			return base;
 		}
-		return base;
+		else{
+			return "/sdcard/kala/";
+		}
 	}
 
 
@@ -367,6 +369,10 @@ public class MainActivity extends Activity {
 			    }
 			    else{
 			    	String mv=result.getString("mv");
+			    	if (mv==null){
+			    		removeCurrDownload("没有MV视频，跳过播放！");
+			    		return;
+			    	}
 			    	String song=result.getString("song");
 			    	String music=result.getString("music");
 			    	if (new File(getMusicLocalPath(music,prefix)).exists()){
@@ -395,6 +401,18 @@ public class MainActivity extends Activity {
 
 
 
+	private void removeCurrDownload(String string) {
+		if (playlist.indexOf(currDownloadMap)>=0){
+			Toast.makeText(this, "无法下载"+currDownloadMap.get("name")+":"+string, Toast.LENGTH_LONG).show();
+			playlist.remove(currDownloadMap);
+			downloading=false;
+			startDownload();
+		}
+		
+	}
+
+
+
 	private String getMvLocalPath(String url,String prefix) {
 		String[] parts = url.split("\\.");
 		return getBase()+prefix+"_0."+parts[parts.length-1];
@@ -405,6 +423,7 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		 mPlayer = new MediaPlayer();
 		setContentView(R.layout.activity_main);
 		enableSocketOnMainUI();
 		startControllerAsyncTask();
@@ -456,7 +475,7 @@ public class MainActivity extends Activity {
 				mPlayer.pause();
 			}
 			else{
-				mPlayer.seekTo(v.getCurrentPosition());
+				mPlayer.seekTo((int) v.getCurrentPosition());
 				v.start();
 				mPlayer.start();
 			}
@@ -581,6 +600,7 @@ public class MainActivity extends Activity {
 		for (HashMap<String,String>map:playlist){
 			if (!fileReady(getPrefixFromMap(map))){
 				downloading=true;
+				currDownloadMap=map;
 				download(map.get("id"),getPrefixFromMap(map));
 				break;
 			}
@@ -661,10 +681,26 @@ public class MainActivity extends Activity {
 		v.setVisibility(View.VISIBLE);
 		v.setOnPreparedListener(new OnPreparedListener(){
 			@Override
-			public void onPrepared(MediaPlayer arg0) {
+			public void onPrepared(MediaPlayer mp) {
 			}
 		});
+		
+		/*
+		String path_adjusted=paths[0]+"_FFMPEG.mp4";
+		if (new File(path_adjusted).exists()){
+			v.setVideoPath(path_adjusted);
+		}
+		else{
+			naMain(this,paths[0],path_adjusted);
+			if (new File(path_adjusted).exists()){
+				v.setVideoPath(path_adjusted);
+			}
+			else{
+				v.setVideoPath(paths[0]);
+			}
+		}*/
 		v.setVideoPath(paths[0]);
+		
 		v.setOnCompletionListener(new OnCompletionListener(){
 			@Override
 			public void onCompletion(MediaPlayer arg0) {
@@ -672,8 +708,7 @@ public class MainActivity extends Activity {
 				playNext();
 			}
 		});
-		
-		mPlayer.setOnCompletionListener(new OnCompletionListener(){
+		mPlayer.setOnCompletionListener(new android.media.MediaPlayer.OnCompletionListener(){
 			@Override
 			public void onCompletion(MediaPlayer mp) {
 				Log.e("", "Audio play finished!");
@@ -705,7 +740,11 @@ public class MainActivity extends Activity {
 		    String[] res=new String[3];
 		    res[0]= reader.readLine();		
 		    res[1]= reader.readLine();		
-		    res[2]= reader.readLine();		
+		    res[2]= reader.readLine();
+		    //fix the path error when tp mini update
+		    res[0]=getBase()+getLastPart(res[0].split("/"));
+		    res[1]=getBase()+getLastPart(res[1].split("/"));
+		    res[2]=getBase()+getLastPart(res[2].split("/"));
 		    return res;
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -714,6 +753,12 @@ public class MainActivity extends Activity {
 		}
 		return null;
 	}
+
+
+	private String getLastPart(String[] split) {
+		return split[split.length-1];
+	}
+
 
 
 	protected void changeSoundChannel(HashMap<String, String> map) {
@@ -732,7 +777,7 @@ public class MainActivity extends Activity {
 			mPlayer.prepare();
 			v.pause();
 			SystemClock.sleep(500);
-			mPlayer.seekTo(v.getCurrentPosition());
+			mPlayer.seekTo((int) v.getCurrentPosition());
 			v.start();
 			mPlayer.start();
 			
@@ -753,5 +798,17 @@ public class MainActivity extends Activity {
 		getMenuInflater().inflate(R.menu.activity_main, menu);
 		return true;
 	}
+	
+	private static native int naMain(MainActivity pObject, String pVideoFileName, String dstPath);
+	
+    static {
+    	System.loadLibrary("avutil-52");
+        System.loadLibrary("avcodec-55");
+        System.loadLibrary("avformat-55");
+        System.loadLibrary("swresample-0");
+        System.loadLibrary("swscale-2");
+        System.loadLibrary("avfilter-3");
+    	System.loadLibrary("ffmpeg_call");
+    }
 
 }
