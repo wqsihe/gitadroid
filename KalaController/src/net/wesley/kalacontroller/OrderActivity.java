@@ -246,15 +246,15 @@ public class OrderActivity extends Activity{
 	    private final WeakReference<OrderActivity> mActivity; 
 
 	    SearchArtistSongHandler(OrderActivity service) {
-	    	mActivity = new WeakReference<OrderActivity>(service);
+	        mActivity = new WeakReference<OrderActivity>(service);
 	    }
 	    @Override
 	    public void handleMessage(Message msg)
 	    {
-	    	OrderActivity service = mActivity.get();
-	         if (service != null) {
-	              service.handleArtistSong(msg);
-	         }
+	        OrderActivity service = mActivity.get();
+	        if (service != null) {
+	            service.handleArtistSong(msg);
+	        }
 	    }
 	}
 	
@@ -414,29 +414,29 @@ public class OrderActivity extends Activity{
 			backToArtists=true;
 			((Button)findViewById(R.id.idsong)).setEnabled(true);
 			String body=(String) message.obj;
-			//Log.d("myown", "response:"+body);
 			try {  
 			    JSONTokener jsonParser = new JSONTokener(body);  
 			    JSONObject result = (JSONObject) jsonParser.nextValue(); 
 			    if (result.getInt("result")==0){
-			    	Toast.makeText(this, result.getString("text"), Toast.LENGTH_LONG).show();
+			        Toast.makeText(this, result.getString("text"), Toast.LENGTH_LONG).show();
 			    }
 			    else{
-			    	JSONArray array = result.getJSONArray("content");
-			    	isLocalSong=false;
-			    	songs.clear();
-			    	for (int i=0;i<array.length();i++){
-			    		JSONObject song=array.getJSONObject(i);
-			    		HashMap<String,Object> map=new HashMap<String,Object>();
-			    		map.put("id", song.getInt("id"));
-			    		map.put("name", song.getString("name"));
-			    		map.put("artist", song.getString("artist"));
-			    		map.put("size", song.getInt("onlineSize"));
-			    		songs.add(map);
-			    	}
-			    	updateSongListView();
+			        JSONArray array = result.getJSONArray("content");
+			        isLocalSong=false;
+			        songs.clear();
+			        for (int i=0;i<array.length();i++){
+			            JSONObject song=array.getJSONObject(i);
+			            HashMap<String,Object> map=new HashMap<String,Object>();
+			            map.put("id", song.getInt("id"));
+			            map.put("name", song.getString("name"));
+			            map.put("artist", song.getString("artist"));
+			            //map.put("size", song.getInt("onlineSize"));
+			            songs.add(map);
+			        }
+			        updateSongListView();
 			    }
 			} catch (JSONException ex) {  
+			    Log.d("", "exception", ex);
 			}  
 		}
 		}
@@ -465,7 +465,7 @@ public class OrderActivity extends Activity{
 			    		map.put("id", song.getInt("id"));
 			    		map.put("name", song.getString("name"));
 			    		map.put("artist", song.getString("artist"));
-			    		map.put("size", song.getInt("onlineSize"));
+			    		//map.put("size", song.getInt("onlineSize"));
 			    		songs.add(map);
 			    	}
 			    	updateSongListView();
