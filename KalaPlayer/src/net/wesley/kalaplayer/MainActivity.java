@@ -46,6 +46,8 @@ import android.widget.VideoView;
 
 public class MainActivity extends Activity {
 	MediaPlayer mPlayer;
+    private static final String GLOBAL_TYPE_PARAM = "d7bd83313b5b444";
+    private static final String GLOBAL_TIANLAI_KEY = "6ae993829ca5410e888f5e97b73ee4a810bb242149fd46ada5777edf587b4225";
 	public DatagramSocket mSocket;
 	private byte[] bytes=new byte[1024];
 	private DatagramPacket mPacket=new DatagramPacket(bytes, bytes.length);
@@ -427,6 +429,9 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 		enableSocketOnMainUI();
 		startControllerAsyncTask();
+		
+		processAddReq("475550 多远都要在一起(演) 邓紫棋;");
+		
 	}
 	
 	@Override 
@@ -650,8 +655,8 @@ public class MainActivity extends Activity {
 		String request;
 		try {
 			request = Base64.encodeBytes(("{\"type\":1,\"songId\":\""+id+"\",\"common\":{\"clientversion\":\"1.9.3\",\"model\":\"sdk\",\"imei\":\"000000000000000\",\"userid\":0,\"resolution\":\"1196X720\",\"apiversion\":\"1.9.3\",\"product\":\"KALAOK\",\"clienttype\":\"Android\",\"nettype\":\"epc.tmobile.com\",\"updatechannel\":\"37\",\"login\":0,\"language\":1,\"imsi\":\"89014103211118510720\",\"systemversion\":\"17\",\"channel\":\"YYH\"},\"primeId\":\"20727\"}").getBytes("UTF-8"));
-			String sign=md5(request+"1731c73ef747457e8ac6f2ddb7de9227087e337ee96b4545b71edd50ea79d367");
-			String url="http://sns.audiocn.org/tlcysns/content/getSongUrl.action?request="+request+"&sign="+sign+"&type=52f78ffbda1e416e";
+			String sign=md5(request+GLOBAL_TIANLAI_KEY);
+			String url="http://sns.audiocn.org/tlcysns/content/getSongUrl.action?request="+request+"&sign="+sign+"&type="+GLOBAL_TYPE_PARAM;
 			currconn=new HttpConnection(this,new GetSongHandler(this,prefix));
 			currconn.post(url, "");
 		} catch (UnsupportedEncodingException e) {
