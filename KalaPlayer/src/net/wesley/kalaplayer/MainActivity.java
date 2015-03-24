@@ -430,7 +430,7 @@ public class MainActivity extends Activity {
 		enableSocketOnMainUI();
 		startControllerAsyncTask();
 		
-		processAddReq("475550 多远都要在一起(演) 邓紫棋;");
+		//processAddReq("475550 多远都要在一起(演) 邓紫棋;");
 		
 	}
 	
